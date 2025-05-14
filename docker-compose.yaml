@@ -1,0 +1,39 @@
+networks:
+    app-network:
+        driver: bridge
+        name: ${SERVICE_NAME}-network
+
+services:
+    postgres:
+        image: postgres:17-alpine
+        container_name: ${SERVICE_NAME}-postgres
+        environment:
+            POSTGRES_PORT: ${POSTGRES_PORT}
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./app/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+        networks:
+            - app-network
+    app:
+        container_name: ${SERVICE_NAME}-container
+        build:
+            context: .
+            dockerfile: Dockerfile
+        environment:
+            POSTGRES_HOST: postgres
+            POSTGRES_PORT: ${POSTGRES_PORT}
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        ports:
+            - 8000:8000
+        depends_on:
+            - postgres
+        networks:
+            - app-network
+
+volumes:
+    postgres_data:
